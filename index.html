@@ -1,28 +1,77 @@
-<!-- 1. Importação da Biblioteca (SDK) -->
-<script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRYOFNC - Login</title>
+    <!-- Importação do SDK do Appwrite -->
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f4f9; margin: 0; }
+        .login-card { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 350px; text-align: center; }
+        h1 { color: #c61d41; margin-bottom: 0.5rem; }
+        p { color: #666; margin-bottom: 1.5rem; }
+        input { width: 100%; padding: 12px; margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #c61d41; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #a51836; }
+    </style>
+</head>
+<body>
 
-<script>
-    // 2. Inicialização do Cliente
-    // Certifique-se de que o ID do projeto é exatamente esse que aparece no seu console
-    const client = new Appwrite.Client()
-        .setEndpoint('https://cloud.appwrite.io/v1') // Endpoint padrão
-        .setProject('69f0c2ac0039982cc56a');        // Seu ID conforme image_eeb73f.jpg
+    <div class="login-card">
+        <h1>CRYOFNC</h1>
+        <p>Acesso Cryotronics</p>
+        
+        <input type="email" id="email" placeholder="E-mail" required>
+        <input type="password" id="password" placeholder="Senha" required>
+        
+        <button onclick="login()">Entrar no Sistema</button>
+    </div>
 
-    const account = new Appwrite.Account(client);
+    <script>
+        // Configuração do Appwrite
+        const client = new Appwrite.Client()
+            .setEndpoint('https://cloud.appwrite.io/v1')
+            .setProject('69f0c2ac0039982cc56a'); // Seu ID confirmado nas imagens
 
-    // 3. Função de Login
-    async function login() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+        const account = new Appwrite.Account(client);
 
-        try {
-            // Cria a sessão de login
-            await account.createEmailPasswordSession(email, password);
-            alert("Login realizado com sucesso!");
-            window.location.href = "dashboard.html"; // Altere para sua página principal
-        } catch (error) {
-            console.error("Erro no login:", error);
-            alert("Erro ao entrar: " + error.message);
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                alert("Por favor, preencha todos os campos.");
+                return;
+            }
+
+            try {
+                // Comando atualizado para a versão 14 do SDK
+                await account.createEmailPasswordSession(email, password);
+                alert("Login realizado com sucesso!");
+                
+                // Altere 'dashboard.html' para o nome da sua página interna
+                window.location.href = "dashboard.html"; 
+            } catch (error) {
+                console.error("Erro no login:", error);
+                
+                if (error.code === 401) {
+                    alert("E-mail ou senha incorretos.");
+                } else if (error.code === 403) {
+                    alert("Acesso negado. Verifique se o domínio está autorizado no Appwrite.");
+                } else {
+                    alert("Erro ao conectar: " + error.message);
+                }
+            }
         }
-    }
-</script>
+
+        // Permite dar 'Enter' para logar
+        document.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+    </script>
+</body>
+</html>
