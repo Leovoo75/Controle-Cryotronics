@@ -2,69 +2,90 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>CRYOFNC - Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRYOFNC - Sistema de Controle</title>
     
-    <!-- Importação do SDK -->
+    <!-- SDK do Appwrite -->
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
     
     <style>
-        /* Mantenha seu CSS aqui ou use um simples para teste */
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; }
-        .card { background: white; padding: 30px; border-radius: 10px; shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
-        input { display: block; width: 100%; margin: 10px 0; padding: 10px; }
-        button { background: #c61d41; color: white; border: none; padding: 10px 20px; cursor: pointer; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; margin: 0; }
+        .login-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        h1 { color: #c61d41; margin-bottom: 8px; font-size: 28px; }
+        p { color: #666; margin-bottom: 24px; }
+        input { width: 100%; padding: 14px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 14px; background-color: #c61d41; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: background 0.3s; }
+        button:hover { background-color: #a51836; }
+        button:disabled { background-color: #ccc; }
+        .error-msg { color: #d93025; font-size: 14px; margin-top: 15px; display: none; }
     </style>
 </head>
 <body>
 
-    <div class="card">
+    <div class="login-container">
         <h1>CRYOFNC</h1>
-        <input type="email" id="email" placeholder="E-mail">
-        <input type="password" id="password" placeholder="Senha">
+        <p>Acesso Cryotronics</p>
+        
+        <input type="email" id="email" placeholder="E-mail" required>
+        <input type="password" id="password" placeholder="Senha" required>
+        
         <button id="btnEntrar" onclick="fazerLogin()">Entrar no Sistema</button>
-        <p id="mensagemErro" style="color: red; display: none;"></p>
+        <div id="mensagemErro" class="error-msg"></div>
     </div>
 
     <script>
-        let account;
+        // Configuração com o Endpoint de Nova York corrigido
+        const client = new Appwrite.Client()
+            .setEndpoint('https://nyc.cloud.appwrite.io/v1') // Correção para image_ee28fd.png
+            .setProject('69f0c2ac0039982cc56a');
 
-        // ESTA FUNÇÃO SÓ RODA QUANDO TUDO NA PÁGINA ESTIVER CARREGADO
-        window.onload = function() {
-            try {
-                if (typeof Appwrite !== 'undefined') {
-                    const client = new Appwrite.Client()
-                        .setEndpoint('https://cloud.appwrite.io/v1')
-                        .setProject('69f0c2ac0039982cc56a');
-
-                    account = new Appwrite.Account(client);
-                    console.log("Appwrite pronto!");
-                } else {
-                    console.error("A biblioteca Appwrite não carregou. Verifique sua conexão ou bloqueadores.");
-                }
-            } catch (err) {
-                console.error("Erro na inicialização:", err);
-            }
-        };
+        const account = new Appwrite.Account(client);
 
         async function fazerLogin() {
-            if (!account) {
-                alert("O sistema ainda está carregando a segurança. Aguarde 3 segundos.");
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('btnEntrar');
+            const msgErro = document.getElementById('mensagemErro');
+
+            if (!email || !password) {
+                alert("Por favor, preencha todos os campos.");
                 return;
             }
 
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const erroP = document.getElementById('mensagemErro');
+            // Interface de carregamento
+            btn.disabled = true;
+            btn.innerText = "Conectando...";
+            msgErro.style.display = "none";
 
             try {
+                // Tenta criar a sessão
                 await account.createEmailPasswordSession(email, password);
-                alert("Sucesso!");
-                window.location.href = "dashboard.html";
+                
+                alert("Acesso autorizado!");
+                // Certifique-se de que este arquivo 'dashboard.html' existe no seu GitHub
+                window.location.href = "dashboard.html"; 
+
             } catch (error) {
-                erroP.innerText = "Erro: " + error.message;
-                erroP.style.display = "block";
+                console.error("Erro detalhado:", error);
+                btn.disabled = false;
+                btn.innerText = "Entrar no Sistema";
+                msgErro.style.display = "block";
+
+                // Tradução de erros comuns
+                if (error.code === 401) {
+                    msgErro.innerText = "E-mail ou senha incorretos.";
+                } else if (error.code === 403) {
+                    msgErro.innerText = "Projeto bloqueado ou região inválida.";
+                } else {
+                    msgErro.innerText = "Erro: " + error.message;
+                }
             }
         }
+
+        // Atalho para o teclado Enter
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') fazerLogin();
+        });
     </script>
 </body>
 </html>
