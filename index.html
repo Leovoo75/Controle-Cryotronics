@@ -2,114 +2,321 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRYOFNC - Sistema de Gestão</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Cryotronics ERP - Gestão de Precisão</title>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        :root { --primary: #c61d41; --bg: #f0f2f5; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); margin: 0; overflow-x: hidden; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: #f0f2f5; color: #333; }
+        :root { --primary: #0b2b40; --secondary: #1c4e63; --success: #27ae60; --danger: #c0392b; --warning: #f39c12; }
         
-        /* ESTILO DO LOGIN */
-        #login-screen { height: 100vh; display: flex; justify-content: center; align-items: center; }
-        .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 350px; text-align: center; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        #login-screen { height: 100vh; display: flex; justify-content: center; align-items: center; background: var(--primary); }
+        .login-card { background: white; padding: 40px; border-radius: 16px; text-align: center; max-width: 350px; width: 90%; box-shadow: 0 12px 28px rgba(0,0,0,0.2); }
+        .login-card input { width: 100%; padding: 14px; margin: 12px 0; border: 1px solid #ccc; border-radius: 40px; text-align: center; }
+        .login-card button { background: var(--primary); color: white; border: none; padding: 12px; width: 100%; border-radius: 40px; font-weight: bold; cursor: pointer; }
         
-        /* ESTILO DO DASHBOARD (Escondido por padrão) */
-        #main-dashboard { display: none; padding: 20px; }
-        .header { background: var(--primary); color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .grid-financeiro { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .card-financeiro { background: white; padding: 20px; border-radius: 10px; border-left: 5px solid var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .valor { font-size: 24px; font-weight: bold; margin-top: 10px; }
+        #main-app { display: none; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: var(--primary); color: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+        .tab-btn { background: white; border: none; padding: 10px 20px; border-radius: 30px; cursor: pointer; font-weight: 600; color: var(--primary); }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .grid-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .summary-card { background: white; padding: 15px; border-radius: 12px; border-left: 5px solid var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .summary-card .value { font-size: 1.2rem; font-weight: bold; margin-top: 5px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        .dre-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dotted #ccc; }
+        .dre-total { background: #eee; padding: 10px; border-radius: 8px; font-weight: bold; margin-top: 10px; }
+        .negativo { color: var(--danger); }
+        .positivo { color: var(--success); }
     </style>
 </head>
 <body>
 
-    <!-- TELA DE LOGIN -->
-    <div id="login-screen">
-        <div class="login-card">
-            <h1 style="color: var(--primary)">CRYOFNC</h1>
-            <p>Financeiro Cryotronics</p>
-            <input type="email" id="email" placeholder="E-mail">
-            <input type="password" id="password" placeholder="Senha">
-            <button id="btnEntrar" onclick="fazerLogin()">Entrar no Sistema</button>
-            <p id="msgErro" style="color: red; display: none; margin-top: 10px;"></p>
+<div id="login-screen">
+    <div class="login-card">
+        <i class="fas fa-microchip fa-3x" style="color: var(--primary);"></i>
+        <h1 style="margin:15px 0">CRYOTRONICS</h1>
+        <input type="password" id="pin-input" placeholder="PIN de acesso" maxlength="4">
+        <button onclick="login()">Acessar Sistema</button>
+    </div>
+</div>
+
+<div id="main-app">
+    <header>
+        <div><i class="fas fa-snowflake"></i> <strong>Cryotronics Cloud v2.0</strong></div>
+        <button onclick="logout()" style="background:none; color:white; border:1px solid white; padding:5px 15px; border-radius:20px; cursor:pointer;">Sair</button>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+        <button class="tab-btn" data-tab="lancamento">Lançamentos</button>
+        <button class="tab-btn" data-tab="extrato">Extrato</button>
+        <button class="tab-btn" data-tab="dre">DRE</button>
+        <button class="tab-btn" data-tab="balanco">Balanço</button>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="tab-content active">
+        <div class="grid-summary" id="dash-cards"></div>
+        <div class="card">
+            <canvas id="fluxoChart" height="100"></canvas>
         </div>
     </div>
 
-    <!-- ÁREA DO DASHBOARD (Aparece após login) -->
-    <div id="main-dashboard">
-        <div class="header">
-            <h2>Dashboard Financeiro</h2>
-            <span id="user-display"></span>
-            <button onclick="logout()" style="width: auto; background: rgba(0,0,0,0.2);">Sair</button>
-        </div>
-
-        <div class="grid-financeiro">
-            <div class="card-financeiro">
-                <span>Total de Lançamentos</span>
-                <div class="valor" id="total-lancamentos">R$ 0,00</div>
-            </div>
-            <div class="card-financeiro" style="border-left-color: #2ecc71;">
-                <span>Receitas</span>
-                <div class="valor" id="receitas">R$ 0,00</div>
-            </div>
-            <div class="card-financeiro" style="border-left-color: #e74c3c;">
-                <span>Despesas</span>
-                <div class="valor" id="despesas">R$ 0,00</div>
+    <!-- LANÇAMENTO -->
+    <div id="lancamento" class="tab-content">
+        <div class="card">
+            <h3><i class="fas fa-pen"></i> Novo Lançamento</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                <input type="date" id="data-lanc">
+                <input type="text" id="historico" placeholder="Histórico/Descrição">
+                <input type="text" id="debito-input" list="contas-list" placeholder="Conta Débito">
+                <input type="text" id="credito-input" list="contas-list" placeholder="Conta Crédito">
+                <input type="number" id="valor-lanc" placeholder="Valor R$">
+                <button onclick="salvarLancamento()" style="background: var(--success); color:white; border:none; border-radius:10px;">Registrar</button>
             </div>
         </div>
-        
-        <!-- Aqui você pode adicionar as abas/tabelas de resultados financeiros -->
     </div>
 
-    <script>
-        const client = new Appwrite.Client()
-            .setEndpoint('https://nyc.cloud.appwrite.io/v1')
-            .setProject('69f0c2ac0039982cc56a');
+    <!-- EXTRATO -->
+    <div id="extrato" class="tab-content">
+        <div class="card">
+            <input type="month" id="filtro-mes" onchange="carregarExtrato()">
+            <table id="tabela-extrato">
+                <thead><tr><th>Data</th><th>Conta D</th><th>Conta C</th><th>Valor</th><th>Ação</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
 
-        const account = new Appwrite.Account(client);
+    <!-- DRE -->
+    <div id="dre" class="tab-content">
+        <div class="card">
+            <h3>Demonstrativo de Resultado</h3>
+            <input type="month" id="dre-mes" onchange="gerarDRE()" style="margin-bottom: 20px;">
+            <div id="dre-container"></div>
+        </div>
+    </div>
 
-        async function fazerLogin() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const btn = document.getElementById('btnEntrar');
+    <!-- BALANÇO -->
+    <div id="balanco" class="tab-content">
+        <div class="card">
+            <h3>Balanço Patrimonial</h3>
+            <input type="month" id="balanco-mes" onchange="gerarBalanco()" style="margin-bottom: 20px;">
+            <div id="balanco-container"></div>
+        </div>
+    </div>
+</div>
 
-            btn.disabled = true;
-            btn.innerText = "Validando...";
+<datalist id="contas-list"></datalist>
 
-            try {
-                await account.createEmailPasswordSession(email, password);
-                const user = await account.get();
-                
-                // MÁGICA: Esconde login e mostra Dashboard
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('main-dashboard').style.display = 'block';
-                document.getElementById('user-display').innerText = "Olá, " + user.name;
-                
-                // Aqui você chamaria a função para carregar os dados financeiros do Appwrite
-                carregarDadosFinanceiros();
+<script>
+    // --- CONFIGURAÇÃO APPWRITE ---
+    const APPWRITE_PROJECT_ID = 'SEU_PROJECT_ID'; 
+    const DATABASE_ID = 'SEU_DATABASE_ID';
+    const COLLECTION_ID = 'lancamentos';
 
-            } catch (error) {
-                btn.disabled = false;
-                btn.innerText = "Entrar no Sistema";
-                const erroDiv = document.getElementById('msgErro');
-                erroDiv.innerText = "Erro: " + error.message;
-                erroDiv.style.display = "block";
-            }
+    const client = new Appwrite.Client().setEndpoint('https://cloud.appwrite.io/v1').setProject(APPWRITE_PROJECT_ID);
+    const databases = new Appwrite.Databases(client);
+
+    const planoContas = [
+        "1.1.1.01 Caixa Geral Cartão de Crédito", "1.1.1.02 Fundo de caixa (dinheiro em espécie)",
+        "1.1.2.01 Valor Recebido da Mechatronics", "1.1.2.02 Valor Recebido de Camaçari",
+        "1.1.2.03 Valor Pago a Mechatronics", "1.1.2.04 Valor Pago a Camaçari",
+        "1.1.3.01 Mercadorias", "1.1.3.02 Equipamentos", "1.1.3.03 Insumos",
+        "1.1.4.01 Títulos a Receber", "1.1.4.02 Impostos a Recuperar", "1.1.4.03 Outros Valores a Receber",
+        "1.3.1.01 Contas a Receber", "1.3.1.02 (-) Perdas Estimadas com Créditos de Liquidação Duvidosa",
+        "1.3.2.01 Participações Societárias", "1.3.2.02 Outros Investimentos",
+        "1.3.3.01 Terrenos", "1.3.3.02 Edificações", "1.3.3.03 Máquinas e Equipamentos", "1.3.3.04 Veículos",
+        "1.3.3.05 Móveis e Utensílios", "1.3.3.06 (-) Depreciação Acumulada", "1.3.4.01 Softwares",
+        "2.1.1.01 Fornecedores Nacionais", "2.1.1.02 Fornecedores Internacionais",
+        "2.1.2.01 Empréstimos Bancários", "2.1.2.02 Financiamentos",
+        "2.1.3.01 SIMPLES NACIONAL (DAS e Honorários advogados)", "2.1.3.02 IRPJ", "2.1.3.03 CSLL", "2.1.3.04 PIS",
+        "2.1.3.05 COFINS", "2.1.3.06 ISSQN a Recolher", "2.1.3.07 INSS imposto a Recolher", "2.1.3.08 DAS",
+        "2.1.3.09 DARF", "2.1.3.10 ACORDO DE PENDENTES",
+        "2.1.4.01 Salários a Pagar", "2.1.4.02 FGTS a Recolher", "2.1.4.03 INSS dos Segurados a Recolher",
+        "2.1.4.04 Horas Extras", "2.1.4.05 Bonus de Viagem", "2.1.4.06 13º salário", "2.1.4.07 Férias",
+        "2.1.4.08 PLR", "2.1.4.09 Outros - Freelancer , Plano de saúde, ASOs, VT, VR, NRs",
+        "2.1.4.10 Extras Fora Folha", "2.1.4.11 Salarios, FGTS, INSS, Plano de Saude colabradores Mecha p/ Cryo",
+        "2.1.4.12 Salarios, FGTS, INSS, Plano de Saude colabradores Serviços Externos p/ Cryo (Pit Stop)",
+        "2.1.5.01 Telefone a Pagar", "2.1.5.02 Energia a Pagar", "2.1.5.03 Agua a Pagar", "2.1.5.04 Aluguel a Pagar",
+        "2.1.6.01 Provisão de Férias", "2.1.6.02 Provisão de 13º Salário", "2.1.6.03 Provisão de Encargos Sociais sobre Férias e 13º Salário",
+        "2.2.1.01 Financiamentos Banco A", "2.2.2.01 Empréstimos de Sócios",
+        "2.3.1.01 Capital Subscrito", "2.3.1.02 (-) Capital a Integralizar", "2.3.2.01 Reservas de Capital",
+        "2.3.2.02 Reservas de Lucros", "2.3.3.01 Lucros Acumulados", "2.3.3.02 (-) Prejuízos Acumulados",
+        "3.1.1.01 Venda de Produtos", "3.1.1.02 Venda de Mercadorias", "3.1.1.03 Venda de Serviços (faturamento das frotas)",
+        "3.1.1.04 (-) Deduções de Tributos, Abatimentos e Devoluções", "3.1.1.05 Venda de Serviços Externos (Pit Stops)",
+        "3.1.2.01 Receitas de Aplicações Financeiras", "3.1.2.02 Juros Ativos",
+        "3.1.3.01 Receitas de Venda de Imobilizado", "3.1.3.02 Receitas de Venda de Investimentos", "3.1.3.03 Outras Receitas",
+        "3.2.1.01 Custos dos Insumos", "3.2.1.02 Custos da Mão de Obra", "3.2.1.03 Custos EPI", "3.2.1.04 Outros Custos (materiais aplicados nas carretas)",
+        "3.2.1.05 Baixas de Estoque", "3.2.2.01 Despesas Administrativas", "3.2.2.02 Despesas com Viagens",
+        "3.2.2.03 Despesas com honorários contabilidade", "3.2.2.04 Despesas com correios", "3.2.2.05 Despesas com frete",
+        "3.2.2.06 Outras Despesas Gerais (incluindo propaganda)", "3.2.2.07 Outras Despesas Gerais incluindo Serviços Externos (pit stop)",
+        "3.2.3.01 Juros Passivos", "3.2.3.02 Outras Despesas Financeiras", "3.2.4.01 Despesas com Baixa de Imobilizado",
+        "3.2.4.02 Despesas com Baixa de Investimentos", "3.2.4.03 Outras Despesas"
+    ];
+
+    let lancamentos = [];
+    let chartInstance = null;
+
+    // Inicialização
+    const datalist = document.getElementById('contas-list');
+    planoContas.forEach(c => { let opt = document.createElement('option'); opt.value = c; datalist.appendChild(opt); });
+
+    function login() {
+        if(document.getElementById('pin-input').value === "1234") {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
+            const hoje = new Date().toISOString().slice(0,7);
+            document.getElementById('filtro-mes').value = hoje;
+            document.getElementById('dre-mes').value = hoje;
+            document.getElementById('balanco-mes').value = hoje;
+            carregarLancamentos();
+        } else alert("Acesso negado.");
+    }
+
+    function logout() { location.reload(); }
+
+    async function carregarLancamentos() {
+        try {
+            const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID);
+            lancamentos = res.documents.map(d => ({id: d.$id, ...d}));
+            atualizarDashboard();
+            carregarExtrato();
+            gerarDRE();
+            gerarBalanco();
+        } catch(e) { console.error(e); }
+    }
+
+    async function salvarLancamento() {
+        const payload = {
+            data: document.getElementById('data-lanc').value,
+            descricao: document.getElementById('historico').value,
+            contaDebito: document.getElementById('debito-input').value,
+            contaCredito: document.getElementById('credito-input').value,
+            valor: parseFloat(document.getElementById('valor-lanc').value)
+        };
+        if(!payload.data || !payload.valor) return alert("Dados incompletos.");
+        await databases.createDocument(DATABASE_ID, COLLECTION_ID, 'unique()', payload);
+        carregarLancamentos();
+    }
+
+    async function excluirLancamento(id) {
+        if(confirm("Deseja excluir?")) {
+            await databases.deleteDocument(DATABASE_ID, COLLECTION_ID, id);
+            carregarLancamentos();
+        }
+    }
+
+    function atualizarDashboard() {
+        let caixa = 0, receber = 0, pagar = 0;
+        lancamentos.forEach(l => {
+            // Caixa (1.1.1)
+            if(l.contaDebito.startsWith("1.1.1")) caixa += l.valor;
+            if(l.contaCredito.startsWith("1.1.1")) caixa -= l.valor;
+            // Receber (1.1.2 e 1.1.4)
+            if(l.contaDebito.startsWith("1.1.2") || l.contaDebito.startsWith("1.1.4")) receber += l.valor;
+            if(l.contaCredito.startsWith("1.1.2") || l.contaCredito.startsWith("1.1.4")) receber -= l.valor;
+            // Pagar (2.1)
+            if(l.contaCredito.startsWith("2.1")) pagar += l.valor;
+            if(l.contaDebito.startsWith("2.1")) pagar -= l.valor;
+        });
+
+        document.getElementById('dash-cards').innerHTML = `
+            <div class="summary-card">Saldo Disponível<div class="value">R$ ${caixa.toFixed(2)}</div></div>
+            <div class="summary-card">A Receber<div class="value">R$ ${receber.toFixed(2)}</div></div>
+            <div class="summary-card" style="border-left-color:var(--danger)">A Pagar<div class="value">R$ ${pagar.toFixed(2)}</div></div>
+        `;
+    }
+
+    function gerarDRE() {
+        const mes = document.getElementById('dre-mes').value;
+        const itens = lancamentos.filter(l => l.data.startsWith(mes));
+
+        const receitaBruta = itens.filter(l => l.contaCredito.startsWith("3.1.1") && l.contaCredito !== "3.1.1.04").reduce((a,b)=>a+b.valor,0);
+        const deducoes = itens.filter(l => l.contaDebito === "3.1.1.04 (-) Deduções de Tributos, Abatimentos e Devoluções").reduce((a,b)=>a+b.valor,0);
+        const custos = itens.filter(l => l.contaDebito.startsWith("3.2.1")).reduce((a,b)=>a+b.valor,0);
+        const despesas = itens.filter(l => l.contaDebito.startsWith("3.2.2") || l.contaDebito.startsWith("3.2.3") || l.contaDebito.startsWith("3.2.4")).reduce((a,b)=>a+b.valor,0);
+        const impostos = itens.filter(l => l.contaDebito.startsWith("2.1.3")).reduce((a,b)=>a+b.valor,0);
+
+        const liq = receitaBruta - deducoes;
+        const bruto = liq - custos;
+        const resultado = bruto - despesas - impostos;
+
+        document.getElementById('dre-container').innerHTML = `
+            <div class="dre-row"><span>(+) Receita Bruta Operacional</span><span>R$ ${receitaBruta.toFixed(2)}</span></div>
+            <div class="dre-row"><span>(-) Deduções e Impostos</span><span>R$ ${deducoes.toFixed(2)}</span></div>
+            <div class="dre-row"><strong>(=) Receita Líquida</strong><strong>R$ ${liq.toFixed(2)}</strong></div>
+            <div class="dre-row"><span>(-) Custos (CPV/CSP)</span><span>R$ ${custos.toFixed(2)}</span></div>
+            <div class="dre-row"><strong>(=) Lucro Bruto</strong><strong>R$ ${bruto.toFixed(2)}</strong></div>
+            <div class="dre-row"><span>(-) Despesas Administrativas/Fixas</span><span>R$ ${despesas.toFixed(2)}</span></div>
+            <div class="dre-row"><span>(-) Impostos sobre Resultado</span><span>R$ ${impostos.toFixed(2)}</span></div>
+            <div class="dre-total">LUCRO/PREJUÍZO LÍQUIDO: R$ ${resultado.toFixed(2)}</div>
+        `;
+    }
+
+    function gerarBalanco() {
+        const mes = document.getElementById('balanco-mes').value;
+        const itens = lancamentos.filter(l => l.data <= `${mes}-31`);
+
+        function calcSaldo(prefixo, tipoAtivo) {
+            let d = itens.filter(l => l.contaDebito.startsWith(prefixo)).reduce((a,b)=>a+b.valor,0);
+            let c = itens.filter(l => l.contaCredito.startsWith(prefixo)).reduce((a,b)=>a+b.valor,0);
+            return tipoAtivo ? (d - c) : (c - d);
         }
 
-        function carregarDadosFinanceiros() {
-            // Lógica para buscar os documentos da sua coleção de lançamentos
-            console.log("Buscando resultados financeiros...");
-            // Exemplo manual:
-            document.getElementById('total-lancamentos').innerText = "R$ 15.420,00";
-        }
+        const ac = calcSaldo("1.1", true);
+        const anc = calcSaldo("1.3", true);
+        const pc = calcSaldo("2.1", false);
+        const pnc = calcSaldo("2.2", false);
+        const pl = calcSaldo("2.3", false);
 
-        async function logout() {
-            await account.deleteSession('current');
-            location.reload(); // Recarrega para voltar à tela de login
+        const totalAtivo = ac + anc;
+        const totalPassivo = pc + pnc + pl;
+
+        document.getElementById('balanco-container').innerHTML = `
+            <div class="dre-row"><span>Ativo Circulante</span><span>R$ ${ac.toFixed(2)}</span></div>
+            <div class="dre-row"><span>Ativo Não Circulante</span><span>R$ ${anc.toFixed(2)}</span></div>
+            <div class="dre-row"><strong>TOTAL ATIVO</strong><strong>R$ ${totalAtivo.toFixed(2)}</strong></div>
+            <br>
+            <div class="dre-row"><span>Passivo Circulante</span><span>R$ ${pc.toFixed(2)}</span></div>
+            <div class="dre-row"><span>Passivo Não Circulante</span><span>R$ ${pnc.toFixed(2)}</span></div>
+            <div class="dre-row"><span>Patrimônio Líquido</span><span>R$ ${pl.toFixed(2)}</span></div>
+            <div class="dre-row"><strong>TOTAL PASSIVO + PL</strong><strong>R$ ${totalPassivo.toFixed(2)}</strong></div>
+        `;
+    }
+
+    function carregarExtrato() {
+        const mes = document.getElementById('filtro-mes').value;
+        const filtrados = lancamentos.filter(l => l.data.startsWith(mes));
+        document.querySelector("#tabela-extrato tbody").innerHTML = filtrados.map(l => `
+            <tr>
+                <td>${l.data.split('-').reverse().join('/')}</td>
+                <td>${l.contaDebito.substring(0,7)}</td>
+                <td>${l.contaCredito.substring(0,7)}</td>
+                <td>R$ ${l.valor.toFixed(2)}</td>
+                <td><i class="fas fa-trash" onclick="excluirLancamento('${l.id}')"></i></td>
+            </tr>
+        `).join('');
+    }
+
+    // Tabs
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.onclick = () => {
+            document.querySelectorAll('.tab-btn, .tab-content').forEach(e => e.classList.remove('active'));
+            b.classList.add('active');
+            document.getElementById(b.dataset.tab).classList.add('active');
         }
-    </script>
+    });
+</script>
 </body>
 </html>
