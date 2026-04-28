@@ -3,73 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRYOFNC - Login</title>
-    <!-- Importação do SDK do Appwrite -->
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <title>CRYOFNC - Sistema de Controle</title>
+    
+    <!-- Link alternativo para evitar o bloqueio de rastreamento do navegador -->
+    <script src="https://www.unpkg.com/appwrite@14.0.1/dist/iife/sdk.bundle.js"></script>
     
     <style>
-        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f4f9; margin: 0; }
-        .login-card { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 350px; text-align: center; }
-        h1 { color: #c61d41; margin-bottom: 0.5rem; }
-        p { color: #666; margin-bottom: 1.5rem; }
-        input { width: 100%; padding: 12px; margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: #c61d41; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; margin: 0; }
+        .login-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        h1 { color: #c61d41; margin-bottom: 8px; font-size: 28px; }
+        p { color: #666; margin-bottom: 24px; }
+        input { width: 100%; padding: 14px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 14px; background-color: #c61d41; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: background 0.3s; }
         button:hover { background-color: #a51836; }
+        .error-msg { color: #d93025; font-size: 14px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
-    <div class="login-card">
+    <div class="login-container">
         <h1>CRYOFNC</h1>
         <p>Acesso Cryotronics</p>
         
-        <input type="email" id="email" placeholder="E-mail" required>
+        <input type="email" id="email" placeholder="E-mail de acesso" required>
         <input type="password" id="password" placeholder="Senha" required>
         
-        <button onclick="login()">Entrar no Sistema</button>
+        <button id="loginBtn" onclick="fazerLogin()">Entrar no Sistema</button>
+        <div id="mensagemErro" class="error-msg"></div>
     </div>
 
     <script>
-        // Configuração do Appwrite
-        const client = new Appwrite.Client()
+        // Inicialização do Appwrite
+        // O ID do projeto foi retirado da sua URL no Appwrite (image_eeb73f.jpg)
+        const { Client, Account } = Appwrite;
+        const client = new Client()
             .setEndpoint('https://cloud.appwrite.io/v1')
-            .setProject('69f0c2ac0039982cc56a'); // Seu ID confirmado nas imagens
+            .setProject('69f0c2ac0039982cc56a');
 
-        const account = new Appwrite.Account(client);
+        const account = new Account(client);
 
-        async function login() {
+        async function fazerLogin() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const btn = document.getElementById('loginBtn');
+            const msgErro = document.getElementById('mensagemErro');
 
             if (!email || !password) {
-                alert("Por favor, preencha todos os campos.");
+                alert("Preencha todos os campos corretamente.");
                 return;
             }
 
+            // Desabilita o botão para evitar múltiplos cliques
+            btn.disabled = true;
+            btn.innerText = "Verificando...";
+            msgErro.style.display = "none";
+
             try {
-                // Comando atualizado para a versão 14 do SDK
+                // Comando obrigatório para a versão mais recente do Appwrite
                 await account.createEmailPasswordSession(email, password);
-                alert("Login realizado com sucesso!");
                 
-                // Altere 'dashboard.html' para o nome da sua página interna
+                alert("Login realizado! Redirecionando...");
+                // Nome da sua página interna (ajuste se for outro nome)
                 window.location.href = "dashboard.html"; 
+
             } catch (error) {
-                console.error("Erro no login:", error);
-                
+                console.error("Erro detectado:", error);
+                btn.disabled = false;
+                btn.innerText = "Entrar no Sistema";
+                msgErro.style.display = "block";
+
                 if (error.code === 401) {
-                    alert("E-mail ou senha incorretos.");
-                } else if (error.code === 403) {
-                    alert("Acesso negado. Verifique se o domínio está autorizado no Appwrite.");
+                    msgErro.innerText = "E-mail ou senha inválidos.";
                 } else {
-                    alert("Erro ao conectar: " + error.message);
+                    msgErro.innerText = "Erro de conexão: " + error.message;
                 }
             }
         }
 
-        // Permite dar 'Enter' para logar
+        // Permite usar a tecla 'Enter' para logar
         document.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
-                login();
+                fazerLogin();
             }
         });
     </script>
