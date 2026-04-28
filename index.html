@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Cryotronics</title>
+    <!-- SDK do Appwrite via CDN para garantir carregamento online -->
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.1/dist/iife/appwrite.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; color: #333; }
+        .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        h1 { color: #e0244e; margin-bottom: 5px; letter-spacing: 1px; }
+        h3 { color: #666; margin-bottom: 30px; font-weight: 400; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; outline: none; font-size: 16px; }
+        input:focus { border-color: #e0244e; box-shadow: 0 0 5px rgba(224, 36, 78, 0.2); }
+        button { width: 100%; padding: 14px; background: #e0244e; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 20px; transition: 0.3s; }
+        button:hover { background: #c01e42; transform: translateY(-1px); }
+        #feedback { margin-top: 15px; font-size: 14px; color: #d9534f; min-height: 20px; }
+        
+        /* Painel pós-login */
+        #painelSessao { display: none; width: 90%; max-width: 800px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .header-painel { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f2f5; padding-bottom: 15px; margin-bottom: 20px; }
+        .btn-sair { width: auto; padding: 8px 20px; background: #6c757d; margin: 0; }
+    </style>
+</head>
+<body>
+
+    <!-- TELA DE LOGIN -->
+    <div id="telaLogin" class="login-card">
+        <h1>CRYOFNC</h1>
+        <h3>Acesso Cryotronics</h3>
+        <input type="email" id="email" placeholder="E-mail" value="leosantossistemas@gmail.com">
+        <input type="password" id="senha" placeholder="Senha">
+        <button id="btnEntrar">Entrar no Sistema</button>
+        <div id="feedback"></div>
+    </div>
+
+    <!-- TELA PRINCIPAL (PAINEL) -->
+    <div id="painelSessao">
+        <div class="header-painel">
+            <h2>Gestão Financeira</h2>
+            <button class="btn-sair" onclick="fazerLogout()">Sair</button>
+        </div>
+        <p>Bem-vindo ao sistema, <strong id="usuarioEmail"></strong>!</p>
+        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 5px solid #e0244e;">
+            <p>Conexão com Appwrite: <strong>Ativa</strong></p>
+            <p>Status do Servidor: <strong>Online</strong></p>
+        </div>
+    </div>
+
+    <script>
+        // Configurações do Appwrite extraídas de image_217816.png
+        const { Client, Account } = Appwrite;
+        const client = new Client()
+            .setEndpoint('https://nyc.cloud.appwrite.io/v1')
+            .setProject('69f0c2ac0039982cc56a'); 
+
+        const account = new Account(client);
+
+        // Função de Login
+        document.getElementById('btnEntrar').onclick = async () => {
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const feedback = document.getElementById('feedback');
+
+            try {
+                feedback.style.color = "#666";
+                feedback.innerText = "Verificando credenciais...";
+                
+                await account.createEmailPasswordSession(email, senha);
+                
+                // Recarrega para validar a sessão
+                window.location.reload();
+            } catch (error) {
+                feedback.style.color = "#d9534f";
+                feedback.innerText = "Erro: " + error.message;
+                console.error(error);
+            }
+        };
+
+        // Função de Logout
+        async function fazerLogout() {
+            try {
+                await account.deleteSession('current');
+                window.location.reload();
+            } catch (error) {
+                alert("Erro ao sair: " + error.message);
+            }
+        }
+
+        // Verificar sessão ativa ao carregar a página
+        async function verificarSessao() {
+            try {
+                const user = await account.get();
+                // Se chegar aqui, o usuário está logado
+                document.getElementById('telaLogin').style.display = 'none';
+                document.getElementById('painelSessao').style.display = 'block';
+                document.getElementById('usuarioEmail').innerText = user.email;
+            } catch (error) {
+                // Usuário não está logado, mantém tela de login
+                console.log("Nenhuma sessão ativa.");
+            }
+        }
+
+        verificarSessao();
+    </script>
+</body>
+</html>
