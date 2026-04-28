@@ -1,40 +1,70 @@
-<script>
-    // 1. Primeiro definimos as variáveis
-    let client, account;
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>CRYOFNC - Login</title>
+    
+    <!-- Importação do SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    
+    <style>
+        /* Mantenha seu CSS aqui ou use um simples para teste */
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; }
+        .card { background: white; padding: 30px; border-radius: 10px; shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
+        input { display: block; width: 100%; margin: 10px 0; padding: 10px; }
+        button { background: #c61d41; color: white; border: none; padding: 10px 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
 
-    // 2. Criamos uma função para inicializar tudo assim que a página carregar
-    function inicializarAppwrite() {
-        try {
-            client = new Appwrite.Client()
-                .setEndpoint('https://cloud.appwrite.io/v1')
-                .setProject('69f0c2ac0039982cc56a');
+    <div class="card">
+        <h1>CRYOFNC</h1>
+        <input type="email" id="email" placeholder="E-mail">
+        <input type="password" id="password" placeholder="Senha">
+        <button id="btnEntrar" onclick="fazerLogin()">Entrar no Sistema</button>
+        <p id="mensagemErro" style="color: red; display: none;"></p>
+    </div>
 
-            account = new Appwrite.Account(client);
-            console.log("Appwrite carregado com sucesso!");
-        } catch (e) {
-            console.error("Erro ao inicializar Appwrite:", e);
+    <script>
+        let account;
+
+        // ESTA FUNÇÃO SÓ RODA QUANDO TUDO NA PÁGINA ESTIVER CARREGADO
+        window.onload = function() {
+            try {
+                if (typeof Appwrite !== 'undefined') {
+                    const client = new Appwrite.Client()
+                        .setEndpoint('https://cloud.appwrite.io/v1')
+                        .setProject('69f0c2ac0039982cc56a');
+
+                    account = new Appwrite.Account(client);
+                    console.log("Appwrite pronto!");
+                } else {
+                    console.error("A biblioteca Appwrite não carregou. Verifique sua conexão ou bloqueadores.");
+                }
+            } catch (err) {
+                console.error("Erro na inicialização:", err);
+            }
+        };
+
+        async function fazerLogin() {
+            if (!account) {
+                alert("O sistema ainda está carregando a segurança. Aguarde 3 segundos.");
+                return;
+            }
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const erroP = document.getElementById('mensagemErro');
+
+            try {
+                await account.createEmailPasswordSession(email, password);
+                alert("Sucesso!");
+                window.location.href = "dashboard.html";
+            } catch (error) {
+                erroP.innerText = "Erro: " + error.message;
+                erroP.style.display = "block";
+            }
         }
-    }
-
-    // Executa a inicialização
-    inicializarAppwrite();
-
-    async function fazerLogin() {
-        // Verifica se a variável 'account' foi inicializada
-        if (!account) {
-            alert("O sistema ainda está carregando. Aguarde um segundo e tente novamente.");
-            return;
-        }
-
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-
-        try {
-            await account.createEmailPasswordSession(email, password);
-            window.location.href = "dashboard.html";
-        } catch (error) {
-            document.getElementById('mensagemErro').innerText = "Erro: " + error.message;
-            document.getElementById('mensagemErro').style.display = "block";
-        }
-    }
-</script>
+    </script>
+</body>
+</html>
